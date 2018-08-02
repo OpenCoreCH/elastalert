@@ -135,6 +135,7 @@ class mock_ruletype(object):
 class mock_alert(object):
     def __init__(self):
         self.alert = mock.Mock()
+        self.resolve = mock.Mock()
 
     def get_info(self):
         return {'type': 'mock'}
