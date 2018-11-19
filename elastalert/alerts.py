@@ -1403,7 +1403,6 @@ class MattermostAlerter(Alerter):
             proxies = {'https': self.slack_proxy} if self.slack_proxy else None
             payload = {
                 'username': self.slack_username_override,
-                'channel': self.slack_channel_override,
                 'parse': self.slack_parse_override,
                 'text': self.slack_text_string,
                 'icon_emoji': self.slack_emoji_override,
@@ -1418,11 +1417,15 @@ class MattermostAlerter(Alerter):
             }
 
             for url in self.slack_webhook_url:
-                try:
-                    response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
-                    response.raise_for_status()
-                except RequestException as e:
-                    raise EAException("Error posting to slack: %s" % e)
+                for channel_override in self.slack_channel_override:
+                    try:
+                        if self.slack_ignore_ssl_errors:
+                            requests.packages.urllib3.disable_warnings()
+                        payload['channel'] = channel_override
+                        response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                        response.raise_for_status()
+                    except RequestException as e:
+                        raise EAException("Error posting to slack: %s" % e)
             elastalert_logger.info("Alert sent to Slack")
         else:
             elastalert_logger.info("Alert not sent to Slack as resolve alert is False")
