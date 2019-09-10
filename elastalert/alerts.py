@@ -1270,10 +1270,6 @@ class SlackAlerter(Alerter):
         for url in self.slack_webhook_url:
             for channel_override in self.slack_channel_override:
                 try:
-                    if self.slack_ca_certs:
-                        verify = self.slack_ca_certs
-                    else:
-                        verify = self.slack_ignore_ssl_errors
                     if self.slack_ignore_ssl_errors:
                         requests.packages.urllib3.disable_warnings()
                     payload['channel'] = channel_override
@@ -1287,6 +1283,40 @@ class SlackAlerter(Alerter):
                 except RequestException as e:
                     raise EAException("Error posting to slack: %s" % e)
         elastalert_logger.info("Alert '%s' sent to Slack" % self.rule['name'])
+
+    def resolve(self):
+        # post resolve message to slack if resolve_alert is true
+        if self.slack_resolve_alert:
+            headers = {'content-type': 'application/json'}
+            proxies = {'https': self.slack_proxy} if self.slack_proxy else None
+            payload = {
+                'username': self.slack_username_override,
+                'parse': self.slack_parse_override,
+                'text': self.slack_text_string,
+                'icon_emoji': self.slack_emoji_override,
+                'attachments': [
+                    {
+                        'color': 'good',
+                        'title': self.rule['name'],
+                        'text': 'Alert is resolved, no error in the current run',
+                        'fields': []
+                    }
+                ]
+            }
+
+            for url in self.slack_webhook_url:
+                for channel_override in self.slack_channel_override:
+                    try:
+                        if self.slack_ignore_ssl_errors:
+                            requests.packages.urllib3.disable_warnings()
+                        payload['channel'] = channel_override
+                        response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                        response.raise_for_status()
+                    except RequestException as e:
+                        raise EAException("Error posting to slack: %s" % e)
+            elastalert_logger.info("Alert sent to Slack")
+        else:
+            elastalert_logger.info("Alert not sent to Slack as resolve alert is False")
 
     def get_info(self):
         return {'type': 'slack',
