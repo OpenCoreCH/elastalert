@@ -52,6 +52,7 @@ from .util import ts_add
 from .util import ts_now
 from .util import ts_to_dt
 from .util import unix_to_dt
+from .util import dt_to_ts_no_ms
 
 
 class ElastAlerter(object):
@@ -908,6 +909,8 @@ class ElastAlerter(object):
 
         # Process any new matches
         num_matches = len(rule['type'].matches)
+        if num_matches == 0:
+            self.resolve_active_alerts(rule, endtime - self.run_every, endtime)
         while rule['type'].matches:
             match = rule['type'].matches.pop(0)
             match['num_hits'] = self.thread_data.cumulative_hits
@@ -962,6 +965,46 @@ class ElastAlerter(object):
         self.writeback('elastalert_status', body)
 
         return num_matches
+
+    def resolve_active_alerts(self, rule, start, end):
+        query = {
+                'query': {
+                    'bool': {
+                        'must': [
+                            {
+                                'match_phrase': {
+                                    'rule_name': '%s' % rule['name']
+                                }
+                            },
+                            {
+                                'match': {
+                                    'alert_sent': 'true'
+                                }
+                            },
+                            {
+                                'range': {
+                                    'alert_time': {'from': dt_to_ts_no_ms(start), 'to': dt_to_ts_no_ms(end)}
+                                }
+                            }
+                        ]
+                    }
+                }}
+        try:
+            if self.writeback_es:
+                res = self.writeback_es.count(index=self.writeback_index, body=query)
+                if res['count'] != [] and res['count'] > 0:
+                    for alert in rule['alert']:
+                        try:
+                            alert.resolve()
+                        except EAException as e:
+                            self.handle_error('Error while resolving alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
+                        else:
+                            self.thread_data.alerts_sent += 1
+        except (ElasticsearchException, KeyError) as e:
+            self.handle_error('Error querying for last alerts: %s' % (e), {'rule': rule['name']})
+            self.writeback_es = None
+
+        return None
 
     def init_rule(self, new_rule, new=True):
         ''' Copies some necessary non-config state from an exiting rule to a new rule. '''
@@ -1327,6 +1370,17 @@ class ElastAlerter(object):
         )
         return kibana.kibana4_dashboard_link(db_name, start, end)
 
+    def generate_kibana6_link(self, rule, match):
+        start = ts_add(
+            lookup_es_key(match, rule['timestamp_field']),
+            -rule.get('timeframe', datetime.timedelta(minutes=10))
+        )
+        end = ts_add(
+            lookup_es_key(match, rule['timestamp_field']),
+            rule.get('timeframe', datetime.timedelta(minutes=10))
+        )
+        return kibana.kibana6_link(rule, start, end)
+
     def generate_kibana_db(self, rule, match):
         ''' Uses a template dashboard to upload a temp dashboard showing the match.
         Returns the url to the dashboard. '''
@@ -1480,9 +1534,11 @@ class ElastAlerter(object):
                 match.update(counts)
 
         # Generate a kibana3 dashboard for the first match
-        if rule.get('generate_kibana_link') or rule.get('use_kibana_dashboard'):
+        if rule.get('generate_kibana_link') or rule.get('use_kibana_dashboard') or rule.get('generate_kibana6_link'):
             try:
-                if rule.get('generate_kibana_link'):
+                if rule.get('generate_kibana6_link'):
+                    kb_link = self.generate_kibana6_link(rule, matches[0])
+                elif rule.get('generate_kibana_link'):
                     kb_link = self.generate_kibana_db(rule, matches[0])
                 else:
                     kb_link = self.use_kibana_link(rule, matches[0])
