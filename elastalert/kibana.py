@@ -295,17 +295,17 @@ def kibana4_dashboard_link(dashboard, starttime, endtime):
 def kibana6_link(rule, starttime, endtime):
     if len(rule["filter"]) == 1 and "query_string" in rule["filter"][0]:
         query = rule["filter"][0]["query_string"]["query"]
-        return rule['kibana_url'] + "#/discover?_a=" + prison.dumps(
-            {
-                "time": {"from": starttime, "mode": "absolute", "to": endtime},
-                "query": {"language": "lucene", "query": query},
-            }
+        return "{}#/discover?_a={}&_g={}".format(
+            rule['kibana_url'],
+            prison.dumps({ "query": { "language": "lucene", "query": query }}),
+            prison.dumps({ "time": { "from": starttime, "mode": "absolute", "to": endtime }})
         )
     else:
         query = elastalert.ElastAlerter.get_query(rule["filter"], five=True)
         filters = query["query"]["bool"]
-        return rule['kibana_url'] + "#/discover?_g=" + prison.dumps(
-            {
+        return "{}#/discover?_g={}".format(
+            rule['kibana_url'],
+            prison.dumps({
                 "filters": [
                     {
                         "$state": {"store": "globalState"},
@@ -322,5 +322,5 @@ def kibana6_link(rule, starttime, endtime):
                     }
                 ],
                 "time": {"from": starttime, "mode": "absolute", "to": endtime},
-            }
+            })
         )
