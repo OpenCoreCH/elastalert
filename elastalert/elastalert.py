@@ -1540,11 +1540,9 @@ class ElastAlerter(object):
                 match.update(counts)
 
         # Generate a kibana3 dashboard for the first match
-        if rule.get('generate_kibana_link') or rule.get('use_kibana_dashboard') or rule.get('generate_kibana6_link'):
+        if rule.get('generate_kibana_link') or rule.get('use_kibana_dashboard'):
             try:
-                if rule.get('generate_kibana6_link'):
-                    kb_link = self.generate_kibana6_link(rule, matches[0])
-                elif rule.get('generate_kibana_link'):
+                if rule.get('generate_kibana_link'):
                     kb_link = self.generate_kibana_db(rule, matches[0])
                 else:
                     kb_link = self.use_kibana_link(rule, matches[0])
