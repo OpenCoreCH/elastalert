@@ -301,7 +301,7 @@ def kibana6_link(rule, starttime, endtime):
             prison.dumps({ "time": { "from": starttime, "mode": "absolute", "to": endtime }})
         )
     else:
-        query = elastalert.ElastAlerter.get_query(rule["filter"], five=True)
+        query = elastalert.elastalert.ElastAlerter.get_query(rule["filter"], five=True)
         filters = query["query"]["bool"]
         return "{}#/discover?_g={}".format(
             rule['kibana_url'],
