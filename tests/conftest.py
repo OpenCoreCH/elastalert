@@ -119,6 +119,7 @@ class mock_rule_loader(object):
         self.load = mock.Mock()
         self.get_hashes = mock.Mock()
         self.load_configuration = mock.Mock()
+        self.count = mock.Mock(return_value={'count': []})
 
 
 class mock_ruletype(object):
