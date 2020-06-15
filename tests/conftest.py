@@ -77,6 +77,7 @@ class mock_es_client(object):
         self.is_atleastsixsix = mock.Mock(return_value=False)
         self.is_atleastseven = mock.Mock(return_value=False)
         self.resolve_writeback_index = mock.Mock(return_value=writeback_index)
+        self.count = mock.Mock(return_value={'count': []})
 
 
 class mock_es_sixsix_client(object):

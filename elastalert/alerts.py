@@ -508,7 +508,7 @@ class EmailAlerter(Alerter):
             to_addr = self.rule['email']
             if 'email_from_field' in self.rule:
                 recipient = self.rule['email_from_field']
-                if isinstance(recipient, basestring):
+                if isinstance(recipient, str):
                     if '@' in recipient:
                         to_addr = [recipient]
                     elif 'email_add_domain' in self.rule:
@@ -1270,6 +1270,10 @@ class SlackAlerter(Alerter):
         for url in self.slack_webhook_url:
             for channel_override in self.slack_channel_override:
                 try:
+                    if self.slack_ca_certs:
+                        verify = self.slack_ca_certs
+                    else:
+                        verify = self.slack_ignore_ssl_errors
                     if self.slack_ignore_ssl_errors:
                         requests.packages.urllib3.disable_warnings()
                     payload['channel'] = channel_override

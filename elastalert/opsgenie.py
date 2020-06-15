@@ -212,4 +212,3 @@ class OpsGenieAlerter(Alerter):
                 raise EAException("Error sending alert: {0}".format(err))
         else:
             elastalert_logger.info("Alert not sent to Opsgenie as resolve alert is not set")
-
