@@ -378,7 +378,6 @@ class RulesLoader(object):
                             'generate_kibana_link is incompatible with filters other than term, query_string and range.'
                             'Consider creating a dashboard and using use_kibana_dashboard instead.')
 
-
         # Check that query_key is set if use_terms_query
         if rule.get('use_terms_query'):
             if 'query_key' not in rule:
