@@ -310,6 +310,20 @@ When using ``type: flatline``, ElastAlert must see at least one document before 
 
 ElastAlert does not currently support stateful alerts or resolve events.
 
+### How to alert only during specific hours
+We added the `hour range enhancement` (reference link [here](https://github.com/0xSeb/elastalert_hour_range]))
+With this enhancement you just need to add the following config to your rule yaml file.
+```
+start_time: "4:00"
+end_time: "20:00"
+
+# Drop match and cancel alert if (inside/outside) range
+drop_if: "outside"
+
+match_enhancements:
+  - "elastalert_modules.hour_range_enhancement.HourRangeEnhancement"
+```
+
 ### Can I set a warning threshold?
 
 Currently, the only way to set a warning threshold is by creating a second rule with a lower threshold.
