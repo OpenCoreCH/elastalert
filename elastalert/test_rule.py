@@ -313,6 +313,7 @@ class MockElastAlerter(object):
         # Mock writeback to return empty results
         client.writeback_es = mock.MagicMock()
         client.writeback_es.search.return_value = {"hits": {"hits": []}}
+        client.writeback_es.count.return_value = {"count": 0}
 
         with mock.patch.object(client, 'writeback') as mock_writeback:
             client.run_rule(rule, endtime, starttime)
