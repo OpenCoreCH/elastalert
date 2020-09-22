@@ -19,6 +19,7 @@ from elastalert.util import elasticsearch_client
 from elastalert.util import lookup_es_key
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
+from util import elastalert_logger
 
 logging.getLogger().setLevel(logging.INFO)
 logging.getLogger('elasticsearch').setLevel(logging.WARNING)
@@ -438,7 +439,7 @@ class MockElastAlerter(object):
             self.run_elastalert(rule_yaml, conf, args)
 
         if args.formatted_output:
-            print(json.dumps(self.formatted_output))
+            elastalert_logger.debug(json.dumps(self.formatted_output))
 
 
 def main():
