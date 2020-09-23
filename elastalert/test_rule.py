@@ -19,7 +19,6 @@ from elastalert.util import elasticsearch_client
 from elastalert.util import lookup_es_key
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
-from util import elastalert_logger
 
 logging.getLogger().setLevel(logging.INFO)
 logging.getLogger('elasticsearch').setLevel(logging.WARNING)
@@ -85,7 +84,6 @@ class MockElastAlerter(object):
         # Get one document for schema
         try:
             res = es_client.search(index=index, size=1, body=query, ignore_unavailable=True)
-            elastalert_logger.debug(json.dumps(query))
         except Exception as e:
             print("Error running your filter:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
@@ -156,7 +154,6 @@ class MockElastAlerter(object):
         if (args.save or args.formatted_output) and not args.count:
             try:
                 res = es_client.search(index=index, size=args.max_query_size, body=query, ignore_unavailable=True)
-                elastalert_logger.debug(json.dumps(query))
             except Exception as e:
                 print("Error running your filter:", file=sys.stderr)
                 print(repr(e)[:2048], file=sys.stderr)
