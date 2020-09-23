@@ -85,6 +85,7 @@ class MockElastAlerter(object):
         # Get one document for schema
         try:
             res = es_client.search(index=index, size=1, body=query, ignore_unavailable=True)
+            elastalert_logger.debug(json.dumps(query))
         except Exception as e:
             print("Error running your filter:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
@@ -155,6 +156,7 @@ class MockElastAlerter(object):
         if (args.save or args.formatted_output) and not args.count:
             try:
                 res = es_client.search(index=index, size=args.max_query_size, body=query, ignore_unavailable=True)
+                elastalert_logger.debug(json.dumps(query))
             except Exception as e:
                 print("Error running your filter:", file=sys.stderr)
                 print(repr(e)[:2048], file=sys.stderr)
@@ -439,7 +441,7 @@ class MockElastAlerter(object):
             self.run_elastalert(rule_yaml, conf, args)
 
         if args.formatted_output:
-            elastalert_logger.debug(json.dumps(self.formatted_output))
+            print(json.dumps(self.formatted_output))
 
 
 def main():
