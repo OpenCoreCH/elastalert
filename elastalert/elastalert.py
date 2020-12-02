@@ -1314,6 +1314,8 @@ class ElastAlerter(object):
             self.handle_error("Error running rule %s: %s" % (rule['name'], e), {'rule': rule['name']})
         except Exception as e:
             self.handle_uncaught_exception(e, rule)
+            """ After the exception has been handled, exit without raising an exception """
+            os._exit(1)
         else:
             old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
             elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
@@ -1986,9 +1988,8 @@ class ElastAlerter(object):
         self.writeback('elastalert_error', body)
 
     def handle_uncaught_exception(self, exception, rule):
-        """ Disables a rule and sends a notification. """
         logging.error(traceback.format_exc())
-        self.handle_error('Uncaught exception running rule %s: %s' % (rule['name'], exception), {'rule': rule['name']})
+        """ Disables a rule and sends a notification. """
         if self.disable_rules_on_error:
             self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
             self.disabled_rules.append(rule)
@@ -1996,6 +1997,11 @@ class ElastAlerter(object):
             elastalert_logger.info('Rule %s disabled', rule['name'])
         if self.notify_email:
             self.send_notification_email(exception=exception, rule=rule)
+        """ Catch AttributeError exception from 'handle_error' when writing traceback to ES and preserve it in traceback """
+        try:
+            self.handle_error('Uncaught exception running rule %s: %s' % (rule['name'], exception), {'rule': rule['name']})
+        except AttributeError:
+            logging.error(traceback.format_exc())
 
     def send_notification_email(self, text='', exception=None, rule=None, subject=None, rule_file=None):
         email_body = text
