@@ -1315,7 +1315,7 @@ class ElastAlerter(object):
         except Exception as e:
             self.handle_uncaught_exception(e, rule)
             """ After the exception has been handled, exit without raising an exception """
-            os._exit(0)
+            os._exit(1)
         else:
             old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
             elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
