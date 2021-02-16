@@ -36,6 +36,6 @@ class Enhancement(BaseEnhancement):
             for k in top_count_keys:
                 key = "top_events_%s" % k
                 if match[key]:
-                    filtered = { key:value for (key,value) in match[key].items() if key }
+                    filtered = {key: value for (key, value) in match[key].items() if key}
                     match["top_events_keys_%s" % k] = list(filtered.keys())
                     match["top_events_values_%s" % k] = list(filtered.values())
