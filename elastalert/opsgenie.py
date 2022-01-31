@@ -2,6 +2,7 @@
 import json
 import logging
 import os.path
+
 import requests
 
 from .alerts import Alerter
@@ -94,7 +95,13 @@ class OpsGenieAlerter(Alerter):
             post['priority'] = self.priority
 
         if self.alias is not None:
-            post['alias'] = self.alias.format(**matches[0])
+            if 'opsgenie_alias_args' in self.rule:
+                alias_subject_args = self.rule['opsgenie_alias_args']
+                alias_subject_values = [lookup_es_key(matches[0], arg) for arg in alias_subject_args]
+                post['alias'] = self.alias.format(*alias_subject_values)
+            else:
+                if self.alias is not None:
+                    post['alias'] = self.alias.format(**matches[0])
 
         details = self.get_details(matches)
         if details:

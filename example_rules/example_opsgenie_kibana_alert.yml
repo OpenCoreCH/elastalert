@@ -63,7 +63,9 @@ resolve_alert: True
 #  - "Production"
 
 # OpsGenie alias, required for resolving
-opsgenie_alias: Kibana Alert
+opsgenie_alias: "{0}"
+opsgenie_alias_args:
+- rule.name
 
 # (Required)
 # The alert is use when a match is found
