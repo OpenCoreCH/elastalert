@@ -35,6 +35,7 @@ from .ruletypes import FlatlineRule
 from .util import add_raw_postfix
 from .util import cronite_datetime_to_timestamp
 from .util import dt_to_ts
+from .util import dt_to_ts_no_ms
 from .util import dt_to_unix
 from .util import EAException
 from .util import elastalert_logger
@@ -53,7 +54,6 @@ from .util import ts_add
 from .util import ts_now
 from .util import ts_to_dt
 from .util import unix_to_dt
-from .util import dt_to_ts_no_ms
 
 
 class ElastAlerter(object):
@@ -929,6 +929,20 @@ class ElastAlerter(object):
                 elastalert_logger.info('Ignoring match for silenced rule %s' % (silence_cache_key,))
                 continue
 
+            if rule.get('kibana_resolve'):
+                if 'kibana' in match and 'alert' in match['kibana'] and 'actionGroupName' in match['kibana']['alert']:
+                    actionGroupName = match['kibana']['alert']['actionGroupName']
+                    if actionGroupName == "Recovered":
+                        for alert in rule['alert']:
+                            try:
+                                alert.resolve()
+                            except EAException as e:
+                                self.handle_error('Error while resolving alert %s: %s' % (alert.get_info()['type'], e),
+                                                  {'rule': rule['name']})
+                            else:
+                                self.thread_data.alerts_sent += 1
+                        continue
+
             if rule['realert']:
                 next_alert, exponent = self.next_alert_time(rule, silence_cache_key, ts_now())
                 self.set_realert(silence_cache_key, next_alert, exponent)
@@ -969,27 +983,27 @@ class ElastAlerter(object):
 
     def resolve_active_alerts(self, rule, start, end):
         query = {
-                'query': {
-                    'bool': {
-                        'must': [
-                            {
-                                'match_phrase': {
-                                    'rule_name': '%s' % rule['name']
-                                }
-                            },
-                            {
-                                'match': {
-                                    'alert_sent': 'true'
-                                }
-                            },
-                            {
-                                'range': {
-                                    'alert_time': {'from': dt_to_ts_no_ms(start), 'to': dt_to_ts_no_ms(end)}
-                                }
+            'query': {
+                'bool': {
+                    'must': [
+                        {
+                            'match_phrase': {
+                                'rule_name': '%s' % rule['name']
                             }
-                        ]
-                    }
-                }}
+                        },
+                        {
+                            'match': {
+                                'alert_sent': 'true'
+                            }
+                        },
+                        {
+                            'range': {
+                                'alert_time': {'from': dt_to_ts_no_ms(start), 'to': dt_to_ts_no_ms(end)}
+                            }
+                        }
+                    ]
+                }
+            }}
         try:
             if self.writeback_es:
                 res = self.writeback_es.count(index=self.writeback_index, body=query)
