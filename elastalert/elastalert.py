@@ -935,7 +935,7 @@ class ElastAlerter(object):
                     if actionGroupName == "Recovered":
                         for alert in rule['alert']:
                             try:
-                                alert.resolve()
+                                alert.resolve([match])
                             except EAException as e:
                                 self.handle_error('Error while resolving alert %s: %s' % (alert.get_info()['type'], e),
                                                   {'rule': rule['name']})
@@ -982,6 +982,8 @@ class ElastAlerter(object):
         return num_matches
 
     def resolve_active_alerts(self, rule, start, end):
+        if rule.get('kibana_resolve'):
+            return
         query = {
             'query': {
                 'bool': {

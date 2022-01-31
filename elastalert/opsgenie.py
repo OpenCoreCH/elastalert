@@ -189,8 +189,16 @@ class OpsGenieAlerter(Alerter):
 
         return details
 
-    def resolve(self):
+    def resolve(self, matches=[]):
         if self.opsgenie_resolve_alert:
+            if self.alias is not None and matches:
+                if 'opsgenie_alias_args' in self.rule:
+                    alias_subject_args = self.rule['opsgenie_alias_args']
+                    alias_subject_values = [lookup_es_key(matches[0], arg) for arg in alias_subject_args]
+                    self.alias = self.alias.format(*alias_subject_values)
+                else:
+                    if self.alias is not None:
+                        self.alias = self.alias.format(**matches[0])
             # build opsgenie result, use alias to resolv open alerts
             post = {'note': 'OK-Elastalert Auto Resolving'}
 
